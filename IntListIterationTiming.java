@@ -35,7 +35,7 @@ public class IntListIterationTiming {
 
 	public static void main(String[] args) throws Exception {
 		for (int pass = 1; pass <= 3; pass++) { // 2 passes to let JIT compile everything, look at 3rd
-			System.out.printf("----- PASS %d -----%d%n", pass);
+			System.out.printf("----- PASS %d -----%n", pass);
 			for (int size = 1000; size <= 10000000; size *= 10) {
 				for (String className : CLASS_NAMES) {
 					dummy = 0;
