@@ -1,47 +1,66 @@
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Benchmark the difference between iteration on {@code ArrayList<Integer>} and regular java array.
  * @author Roman Elizarov
  */
 public class IntListIterationTiming {
-	private static final String[] CLASS_NAMES = new String[]{"IntList$ViaArrayList", "IntList$ViaJavaArray"};
-	private static int dummy; // to avoid HotSpot optimizing away iteration
+	private static final int MIN_SIZE = 1000;
+	private static final int MAX_SIZE = 10_000_000;
+	private static final int TOTAL_ITERATIONS = 1_000_000_000;
+
 	private final IntList list;
 
-	@SuppressWarnings("unchecked")
+	private int dummy; // to avoid HotSpot optimizing away iteration
+
 	private IntListIterationTiming(String className, int size) throws Exception {
-		list = (IntList)Class.forName(className).newInstance();
+		list = (IntList)Class.forName(IntList.class.getName() + "$" + className).newInstance();
 		Random random = new Random(1);
 		for	(int i = 0; i < size; i++)
 			list.add(random.nextInt());
 	}
 
-	private double time() {
-		int reps = 100000000 / list.size();
+	private double time(int size) {
+		dummy = 0;
+		int reps = TOTAL_ITERATIONS / size;
 		long start = System.nanoTime();
 		for	(int rep = 0; rep < reps; rep++)
-			dummy += runIteration();
-		return (double)(System.nanoTime() - start) / reps / list.size();
+			dummy += runIteration(size);
+		return (double)(System.nanoTime() - start) / reps / size;
 	}
 
-	private int runIteration() {
+	private int runIteration(int size) {
 		int sum = 0;
-		for (int i = 0, n = list.size(); i < n; i++)
+		for (int i = 0; i < size; i++)
 			sum += list.getInt(i);
 		return sum;
 	}
 
 	public static void main(String[] args) throws Exception {
-		for (int pass = 1; pass <= 3; pass++) { // 2 passes to let JIT compile everything, look at 3rd
+		if (args.length < 2) {
+			System.err.println("Usage: " + IntListIterationTiming.class + " <passes> <impl> [<impl> ...]");
+			System.err.println("Where: <passes>  is the number of passes to run tests for.");
+			System.err.println("       <impl>    is one of: ");
+			for (Class c : IntList.class.getDeclaredClasses())
+				System.err.println("                    " + c.getSimpleName());
+			return;
+		}
+
+		int passes = Integer.decode(args[0]);
+		String[] classes = Arrays.copyOfRange(args, 1, args.length);
+
+		Map<String, IntListIterationTiming> instances = new HashMap<>();
+		for (String className : classes)
+			instances.put(className, new IntListIterationTiming(className, MAX_SIZE));
+
+		for (int pass = 1; pass <= passes; pass++) {
 			System.out.printf("----- PASS %d -----%n", pass);
-			for (int size = 1000; size <= 10000000; size *= 10) {
-				for (String className : CLASS_NAMES) {
-					dummy = 0;
-					IntListIterationTiming timing = new IntListIterationTiming(className, size);
-					double time = timing.time();
-					System.out.printf(Locale.US, "%30s[%8d]: %.2f ns per item (%d)%n", className, size, time, dummy);
+			for (int size = MIN_SIZE; size <= MAX_SIZE; size *= 10) {
+				for (String className : classes) {
+					IntListIterationTiming timing = instances.get(className);
+					double time = timing.time(size);
+					System.out.printf(Locale.US, "%30s[%8d]: %.2f ns per item (%d)%n",
+							className, size, time, timing.dummy);
 				}
 			}
 		}
