@@ -1,3 +1,5 @@
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 
 public interface IntList {
@@ -33,6 +35,38 @@ public interface IntList {
 			if (index < 0 || index >= size)
 				throw new IndexOutOfBoundsException();
 			return array[index];
+		}
+	}
+
+	public class ViaByteBuffer implements IntList {
+		private ByteBuffer buf = allocate(32);
+		private int size;
+
+		private static ByteBuffer allocate(int size) {
+			ByteBuffer buf = ByteBuffer.allocateDirect(size);
+			buf.order(ByteOrder.nativeOrder());
+			return buf;
+		}
+
+		public int size() {
+			return size;
+		}
+
+		public void add(int value) {
+			if (buf.position() >= buf.capacity()) {
+				ByteBuffer larger = allocate(buf.capacity() * 2);
+				buf.rewind();
+				larger.put(buf);
+				buf = larger;
+			}
+			buf.putInt(value);
+			size++;
+		}
+
+		public int getInt(int index) {
+			if (index < 0 || index >= size)
+				throw new IndexOutOfBoundsException();
+			return buf.getInt(index * 4);
 		}
 	}
 }
