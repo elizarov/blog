@@ -38,12 +38,79 @@ public interface IntList {
 		}
 	}
 
-	public class ViaByteBuffer implements IntList {
+	/**
+	 * Use direct byte buffer, default byte order.
+	 */
+	public class ViaByteBuffer1 implements IntList {
+		private ByteBuffer buf = ByteBuffer.allocateDirect(32);
+		private int size;
+
+		public int size() {
+			return size;
+		}
+
+		public void add(int value) {
+			if (buf.position() >= buf.capacity()) {
+				ByteBuffer larger = ByteBuffer.allocateDirect(buf.capacity() * 2);
+				buf.rewind();
+				larger.put(buf);
+				buf = larger;
+			}
+			buf.putInt(value);
+			size++;
+		}
+
+		public int getInt(int index) {
+			if (index < 0 || index >= size)
+				throw new IndexOutOfBoundsException();
+			return buf.getInt(index * 4);
+		}
+	}
+
+	/**
+	 * Use direct by buffer, native byte order.
+	 */
+	public class ViaByteBuffer2 implements IntList {
 		private ByteBuffer buf = allocate(32);
 		private int size;
 
 		private static ByteBuffer allocate(int size) {
 			ByteBuffer buf = ByteBuffer.allocateDirect(size);
+			buf.order(ByteOrder.nativeOrder());
+			return buf;
+		}
+
+		public int size() {
+			return size;
+		}
+
+		public void add(int value) {
+			if (buf.position() >= buf.capacity()) {
+				ByteBuffer larger = allocate(buf.capacity() * 2);
+				buf.rewind();
+				larger.put(buf);
+				buf = larger;
+			}
+			buf.putInt(value);
+			size++;
+		}
+
+		public int getInt(int index) {
+			if (index < 0 || index >= size)
+				throw new IndexOutOfBoundsException();
+			return buf.getInt(index * 4);
+		}
+	}
+
+	/**
+	 * Use heap byte buffer, native byte order.
+	 */
+	public class ViaByteBuffer3 implements IntList {
+		private ByteBuffer buf = allocate(32);
+		private int size;
+
+		private static ByteBuffer allocate(int size) {
+			ByteBuffer buf = ByteBuffer.allocate(size);
 			buf.order(ByteOrder.nativeOrder());
 			return buf;
 		}
