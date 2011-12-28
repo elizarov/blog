@@ -4,14 +4,14 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Benchmark the difference between iteration for implementations of simple {@link IntList4} interface.
+ * Benchmark the difference between iteration for implementations of simple {@link IntList} interface.
  * @author Roman Elizarov
  */
 public class IntListIterationTiming {
 	private static final int MIN_SIZE = 1000;
-	private static final int MAX_SIZE = 10_000_000;
-	private static final int INITIAL_ITERATIONS = 100_000_000;
-	private static final int TARGET_TIME = 500_000_000; // 500 ms
+	private static final int MAX_SIZE = 10000000;
+	private static final int INITIAL_ITERATIONS = 100000000;
+	private static final int TARGET_TIME = 500000000; // 500 ms
 	private static final int STABLE_PASS = 2;
 	private static final int WARM_UP_REPS = 3;
 
@@ -47,7 +47,7 @@ public class IntListIterationTiming {
 		private final IntList list;
 
 		private int dummy; // to avoid HotSpot optimizing away iteration
-		private Map<Integer, Stats> stats = new HashMap<>();
+		private Map<Integer, Stats> stats = new HashMap<Integer, Stats>();
 
 		private Test(String className, int size) throws Exception {
 			list = (IntList)Class.forName(IntList.class.getName() + "$" + className).newInstance();
@@ -88,10 +88,10 @@ public class IntListIterationTiming {
 
 	public static void main(String[] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("Usage: " + IntListIterationTiming4.class + " <passes> <impl> [<impl> ...]");
+			System.err.println("Usage: " + IntListIterationTiming.class + " <passes> <impl> [<impl> ...]");
 			System.err.println("Where: <passes>  is the number of passes to run tests for.");
 			System.err.println("       <impl>    is one of: ");
-			for (Class c : IntList4.class.getDeclaredClasses())
+			for (Class c : IntList.class.getDeclaredClasses())
 				System.err.println("                    " + c.getSimpleName());
 			return;
 		}
@@ -99,7 +99,7 @@ public class IntListIterationTiming {
 		int passes = Integer.decode(args[0]);
 		String[] classes = Arrays.copyOfRange(args, 1, args.length);
 
-		List<Test> tests = new ArrayList<>();
+		List<Test> tests = new ArrayList<Test>();
 		for (String className : classes)
 			tests.add(new Test(className, MAX_SIZE));
 
