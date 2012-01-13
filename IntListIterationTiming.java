@@ -15,39 +15,11 @@ public class IntListIterationTiming {
 	private static final int STABLE_PASS = 2;
 	private static final int WARM_UP_REPS = 3;
 
-	static class Stats {
-		private double minTime = Double.POSITIVE_INFINITY;
-		private double maxTime;
-		private double sumTime;
-		private double n;
-
-		public void add(Double time) {
-			minTime = Math.min(minTime, time);
-			maxTime = Math.max(maxTime, time);
-			sumTime += time;
-			n++;
-		}
-
-		public double avgTime() {
-			return sumTime / n;
-		}
-
-		@Override
-		public String toString() {
-			if (n > 1) {
-				double avgTime = avgTime();
-				return String.format(Locale.US, "[%+6.2f%% | %.2f - %.2f - %.2f | %+6.2f%%]",
-						(minTime - avgTime) * 100 / avgTime, minTime, avgTime, maxTime, (maxTime - avgTime) * 100 / avgTime);
-			} else
-				return "";
-		}
-	}
-
 	static class Test {
 		private final IntList list;
 
 		private int dummy; // to avoid HotSpot optimizing away iteration
-		private Map<Integer, Stats> stats = new HashMap<Integer, Stats>();
+		private Map<Integer, TimeStats> stats = new HashMap<Integer, TimeStats>();
 
 		private Test(String className, int size) throws Exception {
 			list = (IntList)Class.forName(IntList.class.getName() + "$" + className).newInstance();
@@ -57,9 +29,9 @@ public class IntListIterationTiming {
 		}
 
 		private double run(int pass, int size) {
-			Stats s = stats.get(size);
+			TimeStats s = stats.get(size);
 			if (s == null)
-				stats.put(size, s = new Stats());
+				stats.put(size, s = new TimeStats());
 			int reps = pass > STABLE_PASS ? (int)(TARGET_TIME / s.avgTime() / size) : INITIAL_ITERATIONS / size;
 			time(size, WARM_UP_REPS);
 			double time = time(size, reps);
