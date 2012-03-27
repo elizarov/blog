@@ -17,6 +17,7 @@ public class IntListThroughput {
 
 	static class Test implements Runnable {
 		final IntList list;
+		final IntOp op;
 
 		final AtomicInteger counter = new AtomicInteger();
 
@@ -25,11 +26,12 @@ public class IntListThroughput {
 
 		volatile boolean done;
 
-		private Test(Class<?> implClass, int size) throws Exception {
-			list = (IntList)implClass.newInstance();
+		private Test(Class<?> listImplClass, IntOp op, int size) throws Exception {
+			this.op = op;
+			list = (IntList)listImplClass.newInstance();
 			Random random = new Random(1);
 			for	(int i = 0; i < size; i++)
-				list.add(random.nextInt());
+				list.add(random.nextInt(1 << random.nextInt(31)));
 		}
 
 		public void run() {
@@ -56,35 +58,43 @@ public class IntListThroughput {
 		private int runIteration(int size) {
 			int sum = 0;
 			for (int i = 0; i < size; i++)
-				sum += list.getInt(i);
+				sum += op.compute(list.getInt(i));
 			return sum;
 		}
 	}
 
-	private static Class<?> getImplClass(String className) throws ClassNotFoundException {
+	private static List<String> getListImplClassNames() {
+		List<String> list = new ArrayList<String>();
+		for (Class c : IntList.class.getDeclaredClasses())
+			list.add(c.getSimpleName());
+		Collections.sort(list);
+		return list;
+	}
+
+	private static Class<?> getListImplClass(String className) throws ClassNotFoundException {
 		return Class.forName(IntList.class.getName() + "$" + className);
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length != 3) {
-			System.err.println("Usage: " + IntListIterationTiming.class + " <min-threads> <max-threads> <impl>");
+		if (args.length != 4) {
+			System.err.println("Usage: " + IntListIterationTiming.class + " <min-threads> <max-threads> <list-impl> <op>");
 			System.err.println("Where: <min-threads> the minimal number of threads.");
 			System.err.println("       <max-threads> the maximal number of threads.");
-			System.err.println("       <impl>        is one of: ");
-			for (Class c : IntList.class.getDeclaredClasses())
-				System.err.println("                    " + c.getSimpleName());
+			System.err.println("       <list-impl>   is one of " + getListImplClassNames());
+			System.err.println("       <op>          is one of " + Arrays.asList(IntOp.values()));
 			return;
 		}
 
 		int minThreads = Integer.decode(args[0]);
 		int maxThreads = Integer.decode(args[1]);
-		Class<?> implClass = getImplClass(args[2]);
+		Class<?> listImplClass = getListImplClass(args[2]);
+		IntOp op = IntOp.valueOf(args[3].toUpperCase(Locale.US));
 
 		phaser = new Phaser(1);
 		tests = new ArrayList<Test>(maxThreads);
 
 		for (int i = 0; i < maxThreads; i++)
-			tests.add(new Test(implClass, MAX_SIZE));
+			tests.add(new Test(listImplClass, op, MAX_SIZE));
 		for (int i = 0; i < minThreads - 1; i++)
 			startThread(i);
 
