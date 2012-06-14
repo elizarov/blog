@@ -29,6 +29,6 @@ class Stats {
 
 	@Override
 	public String toString() {
-		return String.format(Locale.US, "%.2f +- %.2f", mean(), dev());
+		return String.format(Locale.US, "%.3f +- %.3f", mean(), dev());
 	}
 }
