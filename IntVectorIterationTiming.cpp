@@ -34,7 +34,7 @@ __int32 IntVectorIterationTiming::runIteration() {
 }
 
 double IntVectorIterationTiming::time() {
-	int reps = 100000000 / vec.size();
+	int reps = 1000000000 / vec.size();
 	__int64 start, finish, freq;
 	QueryPerformanceCounter((LARGE_INTEGER*)&start);
 	for (int rep = 0; rep < reps; rep++)
@@ -45,7 +45,7 @@ double IntVectorIterationTiming::time() {
 }
 
 int main(int argc, const char* argv[]) {
-	for (int pass = 1; pass <= 3; pass++) { // let CPU warm up...
+	for (int pass = 1; pass <= 5; pass++) { // let CPU warm up...
 		printf("----- PASS %d -----\n", pass);
 		for (int size = 1000; size <= 10000000; size *= 10) {
 			dummy = 0;
